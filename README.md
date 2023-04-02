@@ -1,15 +1,15 @@
 # Gundam
 
-Elixir websocket client powered by [Gun 2.0 (erlang)](https://ninenines.eu/docs/en/gun/2.0/manual/)
+Reliable elixir websocket client powered by [Gun 2.0 (erlang)](https://ninenines.eu/docs/en/gun/2.0/manual/)
 
-example of usage
+Example of usage
 ```elixir
 defmodule MyWebsocket do
   use Gundam.Websocket
 end
 ```
 
-it can be used also the callbacks:
+It can be used also the callbacks:
 
 ```elixir
   @doc """
@@ -38,7 +38,7 @@ it can be used also the callbacks:
   @callback on_message(message(), pid(), state()) :: state()
 ```
 
-like
+Using **on_connect/3** callback
 
 ```elixir
 
