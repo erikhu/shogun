@@ -7,6 +7,8 @@ Example of usage
 defmodule MyWebsocket do
   use Gundam.Websocket
 end
+
+{:ok, pid} = MyWebsocket.start_link(url: "ws://localhost/websocket")
 ```
 
 It can be used also the callbacks:
