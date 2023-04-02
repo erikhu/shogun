@@ -9,6 +9,50 @@ defmodule MyWebsocket do
 end
 ```
 
+it can be used also the callbacks:
+
+```elixir
+  @doc """
+  trigger when the websocket client connects successfully
+  """
+  @callback on_connect(headers(), pid(), state()) :: state()
+
+  @doc """
+  trigger when the connection is lost (gun will try to connect again and upgrade to ws)
+  """
+  @callback on_disconnect(pid(), state()) :: state()
+
+  @doc """
+  trigger when the websocket client fails to connect successfully
+  """
+  @callback on_close(code(), reason(), pid(), state()) :: state()
+
+  @doc """
+  trigger when the websocket client has abruptly an error
+  """
+  @callback on_error(reason(), pid(), state()) :: state()
+
+  @doc """
+  trigger when the websocket client recieves an message from the server
+  """
+  @callback on_message(message(), pid(), state()) :: state()
+```
+
+like
+
+```elixir
+
+defmodule MyWebsocket do
+  use Gundam.Websocket
+  
+  @impl Gundam.Websocket
+  def on_connect(_headers, _pid, state) do
+    # Doing something awesome ...
+  end
+end
+```
+
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
