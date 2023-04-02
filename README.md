@@ -2,6 +2,13 @@
 
 Elixir websocket client powered by [Gun](https://ninenines.eu/docs/en/gun/2.0/manual/)
 
+example of usage
+```elixir
+defmodule MyWebsocket do
+  use Gundam.Websocket
+end
+```
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
