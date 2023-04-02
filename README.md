@@ -48,6 +48,7 @@ defmodule MyWebsocket do
   @impl Gundam.Websocket
   def on_connect(_headers, _pid, state) do
     # Doing something awesome ...
+    state
   end
 end
 ```
