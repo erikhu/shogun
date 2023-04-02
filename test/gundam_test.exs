@@ -9,46 +9,93 @@ defmodule GundamTest do
     request_timeout: 1000
   ]
 
-  setup _context do
-    {:ok, ws_server_pid} = start_supervised({
-      Plug.Cowboy,
-      scheme: :http,
-      plug: WebsocketHelper,
-      options: [port: 0, protocol_options: @protocol_options]
-        })
+  setup context do
+    scheme = Map.get(context, :scheme, :http)
+    :tls_certificate_check.override_trusted_authorities({:file, ssl_file("ca_and_chain.pem")})
 
-    ws_server_info = WebsocketHelper.ws_server_info()
-    [ws_server_pid: ws_server_pid, ws_server_info: ws_server_info]
+    {:ok, ws_server_pid} = start_supervised(plug_cowboy(scheme), id: :test_ws_server)
+
+    ws_server_info = WebsocketHelper.ws_server_info(scheme)
+    [ws_server_pid: ws_server_pid, ws_server_info: ws_server_info, scheme: scheme]
   end
 
   test "unsecure connect to websocket server", %{ws_server_info: ws_server_info} do
-    {:ok, ws_pid} = start_supervised({WebsocketTest, [url: "ws://localhost:#{ws_server_info[:port]}/"]})
-    :ok = WebsocketTest.subscribe(ws_pid)
-    assert_received :ws_on_connect
+    {:ok, ws_pid} = start_supervised({WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/"})
+    wait_for(1000, fn ->
+      assert :sys.get_state(ws_pid).connected
+    end)
   end
 
-  # test "secure connect to websocket server", %{ws_server_info: ws_server_info} do
-  #   {:ok, ws_pid} = start_supervised({WebsocketTest, [url: "wss://localhost:#{ws_server_info[:port]}/"]})
-  #   :ok = WebsocketTest.subscribe()
-  #   assert_received :ws_on_connect
-  # end
+  @tag scheme: :https
+  test "secure connect to websocket server", %{ws_server_info: ws_server_info} do
+    {:ok, ws_pid} = start_supervised({
+      WebsocketTest,
+      [
+        url: "wss://localhost:#{ws_server_info[:port]}/"
+      ]
+    })
 
+    wait_for(1000, fn ->
+      assert :sys.get_state(ws_pid).connected
+    end)
+  end
 
-  # test "error connecting to wrong server" do
-  #   assert {:error, :closed} = Gundam.websocket("ws://test/invalid")
-  # end
+  test "reconnect automatically when server fails",
+    %{ws_server_info: ws_server_info, scheme: scheme} do
+    {:ok, ws_pid} = start_supervised({WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/", retry_timeout: 500})
 
-  # test "connect to websocket server by application child", %{ws_server_info: ws_server_info} do
-  #   assert {:ok, ws_pid} = Gundam.Websocket.start_link(url: ws_server_info[:url])
-  #   assert_ping_pong(ws_pid)
-  # end
+    wait_for(1000, fn ->
+      assert :sys.get_state(ws_pid).connected
+    end)
 
-  # test "child_spec", %{ws_server_inf: ws_server_info} do
-  #   spec = {Gundam.WebsocketTest, [url: ws_server_info[:url]]}
+    stop_supervised!(:test_ws_server)
 
-  #   assert Supervisor.child_spec(spec) == %{
-  #            id: {Gundam.WebsocketTest, 1},
-  #            start: {Gundam.WebsocketTest, :start_link, [[url: ws_server_info[:url]]]}
-  #          }
-  # end
+    wait_for(1000, fn ->
+      refute :sys.get_state(ws_pid).connected
+    end)
+
+    start_supervised(plug_cowboy(scheme, ws_server_info[:port]))
+
+    wait_for(10000, fn ->
+      assert :sys.get_state(ws_pid).connected
+    end)
+  end
+
+  defp wait_for(timeout, cb) when timeout <= 0 do
+    cb.()
+  end
+
+  defp wait_for(timeout, cb) do
+    cb.()
+  rescue
+    _ ->
+      Process.sleep(100)
+    wait_for(timeout - 100, cb)
+  end 
+
+  defp https_options(:https) do
+    [
+      password: "gundam",
+      keyfile: ssl_file("server_key_enc.pem"),
+      certfile: ssl_file("valid.pem"),
+      cacertfile: ssl_file("valid.pem")
+    ]
+  end
+
+  defp https_options(_http), do: []
+
+  defp ssl_file(file) do
+    Path.expand("./fixtures/ssl/#{file}", __DIR__)
+  end
+
+  defp plug_cowboy(scheme, port \\ 0) do
+    {
+      Plug.Adapters.Cowboy,
+      [
+        scheme: scheme,
+        plug: WebsocketHelper,
+        options: [port: port, protocol_options: @protocol_options]
+      ] ++ https_options(scheme)
+    }
+  end
 end

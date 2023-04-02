@@ -9,6 +9,8 @@ defmodule Gundam.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env),
+      package: package(),
+      aliases: aliases()
     ]
   end
 
@@ -22,13 +24,29 @@ defmodule Gundam.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
+  defp package do
+    %{
+      name: "Gundam",
+      licenses: ["GPLv3"],
+      authors: ["Erik Gonzalez"]
+    }
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:gun, "~> 2.0"},
       {:cowlib, "~> 2.12.0", override: true},
       {:plug, "~> 1.14"},
-      {:plug_cowboy, "~> 2.0", only: [:test]}
+      {:plug_cowboy, "~> 2.0", only: [:test]},
+      {:x509, "~> 0.8.5", only: :test},
+      {:tls_certificate_check, "~> 1.18"}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["x509.gen.suite -f -p gundam -o test/fixtures/ssl", "test"]
     ]
   end
 end

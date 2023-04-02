@@ -1,16 +1,14 @@
-# PlugGun
-
-**TODO: Add description**
+# Gundam
 
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `plug_gun` to your list of dependencies in `mix.exs`:
+by adding `gundam` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:plug_gun, "~> 0.1.0"}
+    {:gundam, "~> 0.1.0"}
   ]
 end
 ```

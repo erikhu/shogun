@@ -38,16 +38,11 @@ defmodule Gundam.WebsocketHelper do
     Plug.Conn.upgrade_adapter(conn, :websocket, {WebSocketHandler, [], %{idle_timeout: 1000}})
   end
 
-  @protocol_options [
-    idle_timeout: 1000,
-    request_timeout: 1000
-  ]
-
-  def start_websocket_server do
-    Plug.Cowboy.http(__MODULE__, [], port: 0, protocol_options: @protocol_options)
+  def ws_server_info(:https) do
+    :ranch.info(__MODULE__.HTTPS)
   end
 
-  def ws_server_info() do
+  def ws_server_info(_scheme) do
     :ranch.info(__MODULE__.HTTP)
   end
 end

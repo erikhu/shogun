@@ -21,6 +21,11 @@ defmodule Gundam.Websocket do
   @callback on_connect(headers(), pid(), state()) :: state()
 
   @doc """
+  trigger when the connection is lost (gun will try to connect again and upgrade to ws)
+  """
+  @callback on_disconnect(pid(), state()) :: state()
+
+  @doc """
   trigger when the websocket client fails to connect successfully
   """
   @callback on_close(code(), reason(), pid(), state()) :: state()
@@ -81,7 +86,7 @@ defmodule Gundam.Websocket do
           open_opts
           |> Keyword.put_new(:protocols, [:http])
           |> Keyword.put_new(:transport, transport)
-          |> Keyword.put_new(:tls_opts, [verify_type: :verify_peer, cacerts: :public_key.cacerts_get()])
+          |> Keyword.put_new(:tls_opts,  :tls_certificate_check.options(uri.host))
           |> Keyword.put_new(:http_opts,  %{version: :"HTTP/1.1"})
           |> Keyword.put_new(:ws_opts,  %{keepalive: :infinity})
 
@@ -129,7 +134,11 @@ defmodule Gundam.Websocket do
         end
       end
 
-      def send_message(ws_pid, message) do
+      def ping(ws_pid) do
+        GenServer.cast(ws_pid, {:send_message, :ping})
+      end
+
+      def send_message(ws_pid, message) when is_binary(message) do
         GenServer.cast(ws_pid, {:send_message, message})
       end
 
@@ -138,13 +147,13 @@ defmodule Gundam.Websocket do
       end
 
       @impl GenServer
-      def handle_cast({:send_message, _whatever}, %{connected: false} = state) do
-        {:noreply, {:error, :not_connected}, state}
+      def handle_cast({:send_message, _message}, %{connected: false} = state) do
+        {:noreply, state}
       end
 
       def handle_cast({:send_message, :ping}, %{conn_pid: conn_pid, ws_ref: ws_ref} = state) do
         :ok = :gun.ws_send(conn_pid, ws_ref, :ping)
-        {:noreply, :pong, state}
+        {:noreply, state}
       end
 
       @impl GenServer
@@ -196,24 +205,30 @@ defmodule Gundam.Websocket do
       end
 
       @impl GenServer
-      def handle_info({:gun_up, _pid, protocol}, %{conn_pid: conn_pid, uri: uri, headers: headers, ws_opts: ws_opts} = state) do
+      def handle_info({:gun_up, pid, protocol}, %{conn_pid: conn_pid, uri: uri, headers: headers, ws_opts: ws_opts} = state) do
         ws_ref = :gun.ws_upgrade(conn_pid, "#{uri.path}?#{uri.query}" , headers, ws_opts)
         state = Map.put(state, :ws_ref, ws_ref)
 
         {:noreply, state}
       end
 
-      @impl Gundam.Websocket
-      def on_connect(_headers, _pid, state), do: state
+      @impl GenServer
+      def handle_info({:gun_down, pid, protocol, reason, killed_streams}, state) do
+        state = on_disconnect(pid, Map.put(state, :connected, false))
+        {:noreply, state}
+      end
 
-      @impl Gundam.Websocket
       def on_close(_code, _reason, _pid, state), do: state
-
-      @impl Gundam.Websocket
+      def on_connect(_headers, _pid, state), do: state
+      def on_disconnect(_pid, state), do: state
       def on_error(_reason, _pid, state), do: state
-
-      @impl Gundam.Websocket
       def on_message(_message, _pid, state), do: state
+
+      defoverridable on_close: 4
+      defoverridable on_connect: 3
+      defoverridable on_disconnect: 2
+      defoverridable on_error: 3
+      defoverridable on_message: 3
     end
   end
 end
