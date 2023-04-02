@@ -1,6 +1,6 @@
 # Gundam
 
-Elixir websocket client powered by [Gun](https://ninenines.eu/docs/en/gun/2.0/manual/)
+Elixir websocket client powered by [Gun (erlang)](https://ninenines.eu/docs/en/gun/2.0/manual/)
 
 example of usage
 ```elixir
