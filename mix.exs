@@ -26,7 +26,7 @@ defmodule Gundam.MixProject do
 
   defp package do
     %{
-      name: "Gundam",
+      name: "Gundam.Websocket",
       licenses: ["GPLv3"],
       authors: ["Erik Gonzalez"],
       description: "Websocket client",
@@ -42,7 +42,8 @@ defmodule Gundam.MixProject do
       {:plug, "~> 1.14"},
       {:plug_cowboy, "~> 2.0", only: [:test]},
       {:x509, "~> 0.8.5", only: :test},
-      {:tls_certificate_check, "~> 1.18"}
+      {:tls_certificate_check, "~> 1.18"},
+      {:ex_doc, "~> 0.29.4"}
     ]
   end
 
