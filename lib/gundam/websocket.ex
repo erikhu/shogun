@@ -2,6 +2,76 @@ defmodule Gundam.Websocket do
   @moduledoc """
   Wrapper that use gun websocket client
   Please visit https://ninenines.eu/docs/en/gun/2.0/manual/gun/ for more info about the opts
+
+  ## Usage
+  ```elixir
+  defmodule MyWebsocket do
+  use Gundam.Websocket
+  end
+
+  {:ok, pid} = MyWebsocket.start_link(url: "ws://localhost/websocket")
+  ```
+
+  ## Usage of callbacks
+  ```elixir
+  defmodule MyWebsocket do
+    use Gundam.Websocket
+  
+    @impl Gundam.Websocket
+    def on_connect(_headers, _pid, state) do
+      # Doing something awesome ...
+      state
+    end
+  end
+  ```
+
+  ## Opts
+
+  **url:** url to websocket server (ws or wss), for instance `ws://websocket_server/`. **required**
+
+  **connect_timeout:** Connection timeout. default :infinity
+
+  **cookie_store:** The cookie store that Gun will use for this connection. When configured, Gun will query the store for cookies and include them in the request headers; and add cookies found in response headers to the store.
+
+    By default no cookie store will be used.
+
+  **domain_lookup_timeout:** Domain lookup timeout. default :infinity
+
+  **http_opts:** Options specific to the HTTP protocol.
+
+  **retry:** Number of times Gun will try to reconnect on failure before giving up.
+
+  **retry_fun:** A fun that will be called before every reconnect attempt. It receives the current number of retries left and the Gun options. It returns the next number of retries left and the timeout to apply before reconnecting.
+
+  The default fun will remove one to the number of retries and set the timeout to the retry_timeout value.
+
+  The fun must be defined as follow:
+
+  ```elixir
+  fn(non_neg_integer(), opts()) -> %{
+    retries => non_neg_integer(),
+    timeout => pos_integer()
+  } end
+  ```
+
+  The fun will never be called when the retry option is set to 0. When this function returns 0 in the retries value, Gun will do one last reconnect attempt before giving up.
+
+  **retry_timeout:** Time between retries in milliseconds. default 5000
+
+  **supervise:** Whether the Gun process should be started under the gun_sup supervisor. Set to false to use your own supervisor. default true
+
+  **tcp_opts:** TCP options used when establishing the connection. By default Gun enables send timeouts with the options [{send_timeout, 15000}, {send_timeout_close, true}].
+
+  **tls_handshake_timeout:** TLS handshake timeout. default :infinity
+
+  **tls_opts:** TLS options used for the TLS handshake after the connection has been established, when the transport is set to tls. default []
+
+  **trace:** Whether to enable dbg tracing of the connection process. Should only be used during debugging. default false
+
+  **transport:** Whether to use TLS or plain TCP. The default varies depending on the port used. Port 443 defaults to tls. All other ports default to tcp.
+
+  **ws_opts:** Options specific to the Websocket protocol.
+
   """
 
   @type headers() :: keyword()
