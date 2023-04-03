@@ -26,11 +26,11 @@ defmodule Gundam.MixProject do
 
   defp package do
     %{
-      name: "Gundam.Websocket",
+      name: "Gundam",
       licenses: ["GPLv3"],
       authors: ["Erik Gonzalez"],
       description: "Websocket client",
-      links: []
+      links: %{"Github" => "https://github.com/erikhu/gundam"}
     }
   end
 

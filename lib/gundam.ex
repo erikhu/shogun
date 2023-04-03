@@ -1,5 +1,5 @@
 defmodule Gundam do
   @moduledoc """
-  Documentation for `PlugGun`.
+  Documentation for `Gundam`.
   """
 end
