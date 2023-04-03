@@ -1,7 +1,6 @@
 defmodule Gundam.Websocket do
   @moduledoc """
   Wrapper that use gun websocket client
-  Please visit https://ninenines.eu/docs/en/gun/2.0/manual/gun/ for more info about the opts
 
   ## Usage
   ```elixir
@@ -71,6 +70,8 @@ defmodule Gundam.Websocket do
   **transport:** Whether to use TLS or plain TCP. The default varies depending on the port used. Port 443 defaults to tls. All other ports default to tcp.
 
   **ws_opts:** Options specific to the Websocket protocol.
+
+  Please visit https://ninenines.eu/docs/en/gun/2.0/manual/gun/ for more info about the opts
 
   """
 
