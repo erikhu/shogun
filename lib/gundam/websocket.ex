@@ -6,7 +6,7 @@ defmodule Gundam.Websocket do
   ## Usage
   ```elixir
   defmodule MyWebsocket do
-  use Gundam.Websocket
+    use Gundam.Websocket
   end
 
   {:ok, pid} = MyWebsocket.start_link(url: "ws://localhost/websocket")
