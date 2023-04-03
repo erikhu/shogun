@@ -28,7 +28,9 @@ defmodule Gundam.MixProject do
     %{
       name: "Gundam",
       licenses: ["GPLv3"],
-      authors: ["Erik Gonzalez"]
+      authors: ["Erik Gonzalez"],
+      description: "Websocket client",
+      links: []
     }
   end
 
@@ -36,7 +38,7 @@ defmodule Gundam.MixProject do
   defp deps do
     [
       {:gun, "~> 2.0"},
-      {:cowlib, "~> 2.12.0", override: true},
+      {:cowlib, "~> 2.12.0", override: true, only: [:test]},
       {:plug, "~> 1.14"},
       {:plug_cowboy, "~> 2.0", only: [:test]},
       {:x509, "~> 0.8.5", only: :test},
