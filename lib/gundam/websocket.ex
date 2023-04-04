@@ -17,7 +17,7 @@ defmodule Gundam.Websocket do
     use Gundam.Websocket
 
     @impl Gundam.Websocket
-    def on_connect(_headers, _pid, state) do
+    def on_connect(_headers, state) do
       # Doing something awesome ...
       state
     end
