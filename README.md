@@ -1,11 +1,11 @@
-# Gundam
+# Shogun
 
 Reliable elixir websocket client powered by [Gun 2.0 (erlang)](https://ninenines.eu/docs/en/gun/2.0/manual/)
 
 Example of usage
 ```elixir
 defmodule MyWebsocket do
-  use Gundam.Websocket
+  use Shogun.Websocket
 end
 
 {:ok, pid} = MyWebsocket.start_link(url: "ws://localhost/websocket")
@@ -45,9 +45,9 @@ Using **on_connect/2** callback
 ```elixir
 
 defmodule MyWebsocket do
-  use Gundam.Websocket
+  use Shogun.Websocket
   
-  @impl Gundam.Websocket
+  @impl Shogun.Websocket
   def on_connect(_headers, state) do
     # Doing something awesome ...
     state
@@ -59,17 +59,17 @@ end
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `gundam` to your list of dependencies in `mix.exs`:
+by adding `shogun` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:gundam, "~> 0.1.1"}
+    {:shogun, "~> 0.1.1"}
   ]
 end
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/gundam>.
+be found at <https://hexdocs.pm/shogun>.
 

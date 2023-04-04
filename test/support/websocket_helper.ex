@@ -1,4 +1,4 @@
-defmodule Gundam.WebsocketHelper do
+defmodule Shogun.WebsocketHelper do
   # took from plug cowboy project websocket_handler_test.exs
 
   defmodule WebSocketHandler do
@@ -47,6 +47,6 @@ defmodule Gundam.WebsocketHelper do
   end
 end
 
-defmodule Gundam.WebsocketTest do
-  use Gundam.Websocket
+defmodule Shogun.WebsocketTest do
+  use Shogun.Websocket
 end

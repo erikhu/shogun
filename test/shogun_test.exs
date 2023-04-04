@@ -1,8 +1,8 @@
-defmodule GundamTest do
+defmodule ShogunTest do
   use ExUnit.Case, async: true
 
-  alias Gundam.WebsocketHelper
-  alias Gundam.WebsocketTest
+  alias Shogun.WebsocketHelper
+  alias Shogun.WebsocketTest
 
   @protocol_options [
     idle_timeout: 1000,
@@ -81,7 +81,7 @@ defmodule GundamTest do
 
   defp https_options(:https) do
     [
-      password: "gundam",
+      password: "shogun",
       keyfile: ssl_file("server_key_enc.pem"),
       certfile: ssl_file("valid.pem"),
       cacertfile: ssl_file("valid.pem")

@@ -1,10 +1,10 @@
-defmodule Gundam.MixProject do
+defmodule Shogun.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :gundam,
-      version: "0.1.1",
+      app: :shogun,
+      version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -26,11 +26,11 @@ defmodule Gundam.MixProject do
 
   defp package do
     %{
-      name: "gundam",
+      name: "shogun",
       licenses: ["GPLv3"],
       authors: ["Erik Gonzalez"],
       description: "Websocket client",
-      links: %{"Github" => "https://github.com/erikhu/gundam"}
+      links: %{"Github" => "https://github.com/erikhu/shogun"}
     }
   end
 
@@ -49,7 +49,7 @@ defmodule Gundam.MixProject do
 
   defp aliases do
     [
-      test: ["x509.gen.suite -f -p gundam -o test/fixtures/ssl", "test"]
+      test: ["x509.gen.suite -f -p shogun -o test/fixtures/ssl", "test"]
     ]
   end
 end

@@ -1,11 +1,11 @@
-defmodule Gundam.Websocket do
+defmodule Shogun.Websocket do
   @moduledoc """
   Wrapper that uses gun websocket client
 
   ## Usage
   ```elixir
   defmodule MyWebsocket do
-    use Gundam.Websocket
+    use Shogun.Websocket
   end
 
   {:ok, pid} = MyWebsocket.start_link(url: "ws://localhost/websocket")
@@ -14,9 +14,9 @@ defmodule Gundam.Websocket do
   ## Usage of callbacks
   ```elixir
   defmodule MyWebsocket do
-    use Gundam.Websocket
+    use Shogun.Websocket
 
-    @impl Gundam.Websocket
+    @impl Shogun.Websocket
     def on_connect(_headers, state) do
       # Doing something awesome ...
       state
@@ -116,7 +116,7 @@ defmodule Gundam.Websocket do
     quote do
       use GenServer
 
-      @behaviour Gundam.Websocket
+      @behaviour Shogun.Websocket
 
       def start_link(opts) do
         uri = URI.parse(opts[:url])
