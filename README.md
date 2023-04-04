@@ -64,7 +64,7 @@ by adding `gundam` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:gundam, "~> 0.1.0"}
+    {:gundam, "~> 0.1.1"}
   ]
 end
 ```
