@@ -1,5 +1,5 @@
-defmodule Gundam do
+defmodule Shogun do
   @moduledoc """
-  Documentation for `Gundam`.
+  Documentation for `Shogun`.
   """
 end
