@@ -64,7 +64,7 @@ by adding `shogun` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shogun, "~> 0.1.1"}
+    {:shogun, "~> 0.1.0"}
   ]
 end
 ```
