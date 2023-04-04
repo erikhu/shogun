@@ -1,6 +1,6 @@
 defmodule Gundam.Websocket do
   @moduledoc """
-  Wrapper that use gun websocket client
+  Wrapper that uses gun websocket client
 
   ## Usage
   ```elixir
@@ -15,7 +15,7 @@ defmodule Gundam.Websocket do
   ```elixir
   defmodule MyWebsocket do
     use Gundam.Websocket
-  
+
     @impl Gundam.Websocket
     def on_connect(_headers, _pid, state) do
       # Doing something awesome ...
@@ -77,11 +77,12 @@ defmodule Gundam.Websocket do
 
   @type headers() :: keyword()
   @type state() :: %{
-    uri: URI.t(),
-    headers: headers(),
-    ws_opts: keyword(),
-    open_opts: keyword()
-  }
+          uri: URI.t(),
+          headers: headers(),
+          ws_opts: keyword(),
+          open_opts: keyword(),
+          internal_state: map()
+        }
   @type reason() :: atom()
   @type message() :: binary()
   @type code() :: integer()
@@ -89,27 +90,27 @@ defmodule Gundam.Websocket do
   @doc """
   trigger when the websocket client connects successfully
   """
-  @callback on_connect(headers(), pid(), state()) :: state()
+  @callback on_connect(headers(), state()) :: state()
 
   @doc """
   trigger when the connection is lost (gun will try to connect again and upgrade to ws)
   """
-  @callback on_disconnect(pid(), state()) :: state()
+  @callback on_disconnect(reason(), state()) :: state()
 
   @doc """
   trigger when the websocket client fails to connect successfully
   """
-  @callback on_close(code(), reason(), pid(), state()) :: state()
+  @callback on_close(code(), state()) :: state()
 
   @doc """
   trigger when the websocket client has abruptly an error
   """
-  @callback on_error(reason(), pid(), state()) :: state()
+  @callback on_error(reason(), state()) :: state()
 
   @doc """
   trigger when the websocket client recieves an message from the server
   """
-  @callback on_message(message(), pid(), state()) :: state()
+  @callback on_message(message(), state()) :: state()
 
   defmacro __using__(_opts) do
     quote do
@@ -132,49 +133,51 @@ defmodule Gundam.Websocket do
       defp add_open_opts(args, opts) do
         uri = args[:uri]
 
-        open_opts = Keyword.take(opts, [
-              :connect_timeout,
-              :cookie_store,
-              :domain_lookup_timeout,
-              :http_opts,
-              :http2_opts,
-              :protocols,
-              :retry,
-              :retry_fun,
-              :retry_timeout,
-              :supervise,
-              :tcp_opts,
-              :tls_handshake_timeout,
-              :tls_opts,
-              :trace,
-              :transport,
-              :ws_opts
-            ])
+        open_opts =
+          Keyword.take(opts, [
+            :connect_timeout,
+            :cookie_store,
+            :domain_lookup_timeout,
+            :http_opts,
+            :http2_opts,
+            :protocols,
+            :retry,
+            :retry_fun,
+            :retry_timeout,
+            :supervise,
+            :tcp_opts,
+            :tls_handshake_timeout,
+            :tls_opts,
+            :trace,
+            :transport,
+            :ws_opts
+          ])
 
-        transport = if uri.scheme == "wss", do: :tls , else: :tcp
+        transport = if uri.scheme == "wss", do: :tls, else: :tcp
 
         open_opts =
           open_opts
           |> Keyword.put_new(:protocols, [:http])
           |> Keyword.put_new(:transport, transport)
-          |> Keyword.put_new(:tls_opts,  :tls_certificate_check.options(uri.host))
-          |> Keyword.put_new(:http_opts,  %{version: :"HTTP/1.1"})
-          |> Keyword.put_new(:ws_opts,  %{keepalive: :infinity})
+          |> Keyword.put_new(:tls_opts, :tls_certificate_check.options(uri.host))
+          |> Keyword.put_new(:http_opts, %{version: :"HTTP/1.1"})
+          |> Keyword.put_new(:ws_opts, %{keepalive: :infinity})
 
         [{:open_opts, Map.new(open_opts)} | args]
       end
 
       # ws_opts() https://ninenines.eu/docs/en/gun/2.0/manual/gun/
       defp add_ws_opts(args, opts) do
-        ws_opts = Keyword.take(opts, [
-              :closing_timeout,
-              :compress,
-              :default_protocol,
-              :flow,
-              :keepalive,
-              :protocols,
-              :silence_pings
-            ])
+        ws_opts =
+          Keyword.take(opts, [
+            :closing_timeout,
+            :compress,
+            :default_protocol,
+            :flow,
+            :keepalive,
+            :protocols,
+            :silence_pings
+          ])
 
         ws_opts =
           ws_opts
@@ -185,11 +188,17 @@ defmodule Gundam.Websocket do
 
       @impl GenServer
       def init(args) do
-
         {
           :ok,
-         %{uri: args[:uri], headers: args[:headers], ws_opts: args[:ws_opts], open_opts: args[:open_opts], connected: false},
-         {:continue, :connect}
+          %{
+            uri: args[:uri],
+            headers: args[:headers],
+            ws_opts: args[:ws_opts],
+            open_opts: args[:open_opts],
+            connected: false,
+            internal_state: %{}
+          },
+          {:continue, :connect}
         }
       end
 
@@ -197,7 +206,7 @@ defmodule Gundam.Websocket do
       def handle_continue(
             :connect,
             %{uri: uri, headers: headers, ws_opts: ws_opts, open_opts: open_opts} = state
-      ) do
+          ) do
         with {:ok, conn_pid} <- :gun.open(String.to_charlist(uri.host), uri.port, open_opts) do
           state = Map.put(state, :conn_pid, conn_pid)
 
@@ -242,27 +251,45 @@ defmodule Gundam.Websocket do
       Gun sends an Erlang message to the owner process for every Websocket message it receives.
       """
       @impl GenServer
-      def handle_info({:gun_ws, pid, _ref, message}, state) do
-        state = on_message(message, pid, state)
-        {:noreply, state}
+      def handle_info({:gun_ws, _pid, _ref, message}, %{internal_state: internal_state} = state) do
+        internal_state = on_message(message, internal_state)
+        {:noreply, Map.put(state, :internal_state, internal_state)}
       end
 
       @doc """
       When the upgrade succeeds, a gun_upgrade message is sent.
       """
       @impl GenServer
-      def handle_info({:gun_upgrade, pid, ref, _code, headers}, state) do
-        state = on_connect(headers, pid, state)
-        {:noreply, Map.put(state, :connected, true)}
+      def handle_info(
+            {:gun_upgrade, _pid, ref, _code, headers},
+            %{internal_state: internal_state} = state
+          ) do
+        internal_state = on_connect(headers, internal_state)
+
+        state =
+          state
+          |> Map.put(:connected, true)
+          |> Map.put(:internal_state, internal_state)
+
+        {:noreply, state}
       end
 
       @doc """
       If the server does not understand Websocket or refused the upgrade, a gun_response message is sent.
       """
       @impl GenServer
-      def handle_info({:gun_response, pid, a, b, status, _headers}, state) do
-        state = on_close(status, status, pid, state)
-        {:stop, :normal, Map.put(state, :connected, false)}
+      def handle_info(
+            {:gun_response, _conn_pid, _stream_ref, _is_fin, status, _headers},
+            %{internal_state: internal_state} = state
+          ) do
+        internal_state = on_close(status, internal_state)
+
+        state =
+          state
+          |> Map.put(:connected, false)
+          |> Map.put(:internal_state, internal_state)
+
+        {:stop, :normal, state}
       end
 
       @doc """
@@ -270,36 +297,57 @@ defmodule Gundam.Websocket do
       to Websocket on an HTTP/1.0 connection) then a gun_error message is sent.
       """
       @impl GenServer
-      def handle_info({:gun_error, pid, _ref, reason}, state) do
-        state = on_error(reason, pid, state)
-        {:stop, :normal, Map.put(state, :connected, false)}
+      def handle_info(
+            {:gun_error, _pid, _stream_ref, reason},
+            %{internal_state: internal_state} = state
+          ) do
+        state = on_error(reason, internal_state)
+
+        state =
+          state
+          |> Map.put(:connected, false)
+          |> Map.put(:internal_state, internal_state)
+
+        {:stop, :normal, state}
       end
 
       @impl GenServer
-      def handle_info({:gun_up, pid, protocol}, %{conn_pid: conn_pid, uri: uri, headers: headers, ws_opts: ws_opts} = state) do
-        ws_ref = :gun.ws_upgrade(conn_pid, "#{uri.path}?#{uri.query}" , headers, ws_opts)
+      def handle_info(
+            {:gun_up, pid, protocol},
+            %{conn_pid: conn_pid, uri: uri, headers: headers, ws_opts: ws_opts} = state
+          ) do
+        ws_ref = :gun.ws_upgrade(conn_pid, "#{uri.path}?#{uri.query}", headers, ws_opts)
         state = Map.put(state, :ws_ref, ws_ref)
 
         {:noreply, state}
       end
 
       @impl GenServer
-      def handle_info({:gun_down, pid, protocol, reason, killed_streams}, state) do
-        state = on_disconnect(pid, Map.put(state, :connected, false))
+      def handle_info(
+            {:gun_down, _pid, _protocol, reason, _killed_streams},
+            %{internal_state: internal_state} = state
+          ) do
+        internal_state = on_disconnect(reason, internal_state)
+
+        state =
+          state
+          |> Map.put(:connected, false)
+          |> Map.put(:internal_state, internal_state)
+
         {:noreply, state}
       end
 
-      def on_close(_code, _reason, _pid, state), do: state
-      def on_connect(_headers, _pid, state), do: state
-      def on_disconnect(_pid, state), do: state
-      def on_error(_reason, _pid, state), do: state
-      def on_message(_message, _pid, state), do: state
+      def on_close(_code, state), do: state
+      def on_connect(_headers, state), do: state
+      def on_disconnect(_reason, state), do: state
+      def on_error(_reason, state), do: state
+      def on_message(_message, state), do: state
 
-      defoverridable on_close: 4
-      defoverridable on_connect: 3
+      defoverridable on_close: 2
+      defoverridable on_connect: 2
       defoverridable on_disconnect: 2
-      defoverridable on_error: 3
-      defoverridable on_message: 3
+      defoverridable on_error: 2
+      defoverridable on_message: 2
     end
   end
 end
