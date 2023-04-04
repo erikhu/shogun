@@ -14,9 +14,9 @@ defmodule Gundam.WebsocketHelper do
     def websocket_handle(:ping, state) do
       {:reply, :pong, state}
     end
-    
+
     @impl true
-    def websocket_handle({:text, "state"}, state), do: {:reply,[{:text, inspect(state)}], state}
+    def websocket_handle({:text, "state"}, state), do: {:reply, [{:text, inspect(state)}], state}
 
     def websocket_handle({:text, msg}, state),
       do: {:reply, [{:text, msg}], state}

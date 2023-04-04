@@ -20,7 +20,9 @@ defmodule GundamTest do
   end
 
   test "unsecure connect to websocket server", %{ws_server_info: ws_server_info} do
-    {:ok, ws_pid} = start_supervised({WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/"})
+    {:ok, ws_pid} =
+      start_supervised({WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/"})
+
     wait_for(1000, fn ->
       assert :sys.get_state(ws_pid).connected
     end)
@@ -28,12 +30,13 @@ defmodule GundamTest do
 
   @tag scheme: :https
   test "secure connect to websocket server", %{ws_server_info: ws_server_info} do
-    {:ok, ws_pid} = start_supervised({
-      WebsocketTest,
-      [
-        url: "wss://localhost:#{ws_server_info[:port]}/"
-      ]
-    })
+    {:ok, ws_pid} =
+      start_supervised({
+        WebsocketTest,
+        [
+          url: "wss://localhost:#{ws_server_info[:port]}/"
+        ]
+      })
 
     wait_for(1000, fn ->
       assert :sys.get_state(ws_pid).connected
@@ -41,8 +44,11 @@ defmodule GundamTest do
   end
 
   test "reconnect automatically when server fails",
-    %{ws_server_info: ws_server_info, scheme: scheme} do
-    {:ok, ws_pid} = start_supervised({WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/", retry_timeout: 500})
+       %{ws_server_info: ws_server_info, scheme: scheme} do
+    {:ok, ws_pid} =
+      start_supervised(
+        {WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/", retry_timeout: 500}
+      )
 
     wait_for(1000, fn ->
       assert :sys.get_state(ws_pid).connected
@@ -70,8 +76,8 @@ defmodule GundamTest do
   rescue
     _ ->
       Process.sleep(100)
-    wait_for(timeout - 100, cb)
-  end 
+      wait_for(timeout - 100, cb)
+  end
 
   defp https_options(:https) do
     [
