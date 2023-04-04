@@ -1,6 +1,6 @@
 # Shogun
 
-Reliable elixir websocket client powered by [Gun 2.0 (erlang)](https://ninenines.eu/docs/en/gun/2.0/manual/)
+Reliable elixir websocket client 
 
 Example of usage
 ```elixir
@@ -73,3 +73,4 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/shogun>.
 
+Thanks to [Gun 2.0 (erlang)](https://ninenines.eu/docs/en/gun/2.0/manual/)
