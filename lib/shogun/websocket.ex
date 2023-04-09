@@ -116,6 +116,9 @@ defmodule Shogun.Websocket do
     quote do
       use GenServer
 
+      alias Shogun.Websocket
+      alias Shogun.Websocket.Gun
+
       @behaviour Shogun.Websocket
 
       def start_link(opts) do
@@ -154,12 +157,13 @@ defmodule Shogun.Websocket do
           ])
 
         transport = if uri.scheme == "wss", do: :tls, else: :tcp
+        tls_opts = if transport == :tls, do: :tls_certificate_check.options(uri.host), else: []
 
         open_opts =
           open_opts
           |> Keyword.put_new(:protocols, [:http])
           |> Keyword.put_new(:transport, transport)
-          |> Keyword.put_new(:tls_opts, :tls_certificate_check.options(uri.host))
+          |> Keyword.put_new(:tls_opts, tls_opts)
           |> Keyword.put_new(:http_opts, %{version: :"HTTP/1.1"})
           |> Keyword.put_new(:ws_opts, %{keepalive: :infinity})
 
@@ -205,13 +209,9 @@ defmodule Shogun.Websocket do
       @impl GenServer
       def handle_continue(
             :connect,
-            %{uri: uri, headers: headers, ws_opts: ws_opts, open_opts: open_opts} = state
+            state
           ) do
-        with {:ok, conn_pid} <- :gun.open(String.to_charlist(uri.host), uri.port, open_opts) do
-          state = Map.put(state, :conn_pid, conn_pid)
-
-          {:noreply, state}
-        end
+        client().connect(state)
       end
 
       def ping(ws_pid) do
@@ -348,6 +348,10 @@ defmodule Shogun.Websocket do
       defoverridable on_disconnect: 2
       defoverridable on_error: 2
       defoverridable on_message: 2
+
+      defp client() do
+        Application.get_env(:shogun, Websocket, client: Websocket.Gun)[:client]
+      end
     end
   end
 end

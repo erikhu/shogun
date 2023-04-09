@@ -2,7 +2,7 @@ defmodule ShogunTest do
   use ExUnit.Case, async: true
 
   alias Shogun.WebsocketHelper
-  alias Shogun.WebsocketTest
+  alias Shogun.WebsocketClientTest
 
   @protocol_options [
     idle_timeout: 1000,
@@ -21,7 +21,7 @@ defmodule ShogunTest do
 
   test "unsecure connect to websocket server", %{ws_server_info: ws_server_info} do
     {:ok, ws_pid} =
-      start_supervised({WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/"})
+      start_supervised({WebsocketClientTest, url: "ws://localhost:#{ws_server_info[:port]}/"})
 
     wait_for(1000, fn ->
       assert :sys.get_state(ws_pid).connected
@@ -32,7 +32,7 @@ defmodule ShogunTest do
   test "secure connect to websocket server", %{ws_server_info: ws_server_info} do
     {:ok, ws_pid} =
       start_supervised({
-        WebsocketTest,
+        WebsocketClientTest,
         [
           url: "wss://localhost:#{ws_server_info[:port]}/"
         ]
@@ -47,7 +47,7 @@ defmodule ShogunTest do
        %{ws_server_info: ws_server_info, scheme: scheme} do
     {:ok, ws_pid} =
       start_supervised(
-        {WebsocketTest, url: "ws://localhost:#{ws_server_info[:port]}/", retry_timeout: 500}
+        {WebsocketClientTest, url: "ws://localhost:#{ws_server_info[:port]}/", retry_timeout: 500}
       )
 
     wait_for(1000, fn ->
