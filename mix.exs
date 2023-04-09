@@ -4,7 +4,7 @@ defmodule Shogun.MixProject do
   def project do
     [
       app: :shogun,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -40,7 +40,7 @@ defmodule Shogun.MixProject do
       {:gun, "~> 2.0"},
       {:cowlib, "~> 2.12.0", override: true, only: [:test]},
       {:plug, "~> 1.14", only: [:test]},
-      {:plug_cowboy, "~> 2.0", only: [:test]},
+      {:plug_cowboy, "~> 2.6", only: [:test]},
       {:x509, "~> 0.8.5", only: :test},
       {:tls_certificate_check, "~> 1.18"},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
