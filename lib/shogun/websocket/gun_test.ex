@@ -19,7 +19,7 @@ defmodule Shogun.Websocket.GunTest do
   now on your test, you can control the messages that your websocket received.
 
   ```elixir
-  defmodule MyApp.Websocket do
+  defmodule MyApp.WebsocketTest do
     use ExUnit.Case, async: true
 
     alias Shogun.Websocket.GunTest
