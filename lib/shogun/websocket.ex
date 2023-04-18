@@ -84,7 +84,14 @@ defmodule Shogun.Websocket do
           internal_state: map()
         }
   @type reason() :: atom()
-  @type message() :: binary()
+  @type message() ::
+          :close
+          | :ping
+          | :pong
+          | {:text | binary() | :close, binary()}
+          | {:close, non_neg_integer(), binary()}
+          | {:ping | :pong, binary()}
+
   @type code() :: integer()
 
   @doc """
