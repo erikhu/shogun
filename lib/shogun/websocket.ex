@@ -207,8 +207,7 @@ defmodule Shogun.Websocket do
             ws_opts: args[:ws_opts],
             open_opts: args[:open_opts],
             connected: false,
-            internal_state: %{}
-          },
+            internal_state: Keyword.get(args, :internal_state, %{}),
           {:continue, :connect}
         }
       end
