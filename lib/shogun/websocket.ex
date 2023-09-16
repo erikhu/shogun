@@ -304,11 +304,11 @@ defmodule Shogun.Websocket do
       """
       @impl GenServer
       def handle_info(
-            {:gun_response, _conn_pid, _stream_ref, _is_fin, status, _headers},
+            {:gun_response, _conn_pid, _stream_ref, _is_fin, status, headers},
             %{internal_state: internal_state} = state
           ) do
         Logger.error(
-          "[#{@prefix}] server does not understand websocket, error reason: #{inspect(reason)}"
+          "[#{@prefix}] server does not understand websocket or refused the upgrade, error status: #{inspect(status)}, headers: #{inspect(headers)}, state: #{inspect(state)}"
         )
 
         internal_state = on_close(status, internal_state)
@@ -357,7 +357,7 @@ defmodule Shogun.Websocket do
             {:gun_down, _pid, _protocol, reason, _killed_streams},
             %{internal_state: internal_state} = state
           ) do
-        Logger.warn("[#{@prefix}] disconnected, reason: #{inspect(reason)}")
+        Logger.warning("[#{@prefix}] disconnected, reason: #{inspect(reason)}")
 
         internal_state = on_disconnect(reason, internal_state)
 
