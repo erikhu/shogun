@@ -4,5 +4,5 @@ defmodule Shogun.Websocket.Client do
   @doc """
   Only intented to be used inside the `websocket.ex` file after init
   """
-  @callback connect(state) :: {:noreply, state()}
+  @callback connect(state()) :: {:ok, pid()} | {:error, term()}
 end

@@ -39,10 +39,10 @@ defmodule Shogun.Websocket.GunTest do
   """
 
   @impl Shogun.Websocket.Client
-  def connect(state) do
+  def connect(_state) do
     send(self(), {:gun_upgrade, self(), nil, nil, []})
 
-    {:noreply, state}
+    {:ok, self()}
   end
 
   def receive_message(pid, message) when is_binary(message) do

@@ -126,7 +126,11 @@ defmodule Shogun.Websocket do
       alias Shogun.Websocket
       alias Shogun.Websocket.Gun
 
+      require Logger
+
       @behaviour Shogun.Websocket
+
+      @prefix "#{__MODULE__}"
 
       def start_link(opts) do
         uri = URI.parse(opts[:url])
@@ -208,7 +212,7 @@ defmodule Shogun.Websocket do
             open_opts: args[:open_opts],
             connected: false,
             internal_state: Keyword.get(args, :internal_state, %{})
-           },
+          },
           {:continue, :connect}
         }
       end
@@ -218,7 +222,21 @@ defmodule Shogun.Websocket do
             :connect,
             state
           ) do
-        client().connect(state)
+        case client().connect(state) do
+          {:ok, pid} ->
+            ref = Process.monitor(pid)
+
+            state =
+              state
+              |> Map.put(:conn_pid, pid)
+              |> Map.put(:conn_ref, ref)
+
+            {:noreply, Map.put(state, :conn_pid, pid)}
+
+          {:error, error} ->
+            Logger.error("[#{@prefix}] can not connect, reason: #{inspect(error)}")
+            {:stop, :normal, state}
+        end
       end
 
       def ping(ws_pid) do
@@ -289,6 +307,10 @@ defmodule Shogun.Websocket do
             {:gun_response, _conn_pid, _stream_ref, _is_fin, status, _headers},
             %{internal_state: internal_state} = state
           ) do
+        Logger.error(
+          "[#{@prefix}] server does not understand websocket, error reason: #{inspect(reason)}"
+        )
+
         internal_state = on_close(status, internal_state)
 
         state =
@@ -308,6 +330,7 @@ defmodule Shogun.Websocket do
             {:gun_error, _pid, _stream_ref, reason},
             %{internal_state: internal_state} = state
           ) do
+        Logger.error("[#{@prefix}] error, reason: #{inspect(reason)}")
         state = on_error(reason, internal_state)
 
         state =
@@ -334,6 +357,8 @@ defmodule Shogun.Websocket do
             {:gun_down, _pid, _protocol, reason, _killed_streams},
             %{internal_state: internal_state} = state
           ) do
+        Logger.warn("[#{@prefix}] disconnected, reason: #{inspect(reason)}")
+
         internal_state = on_disconnect(reason, internal_state)
 
         state =
@@ -342,6 +367,12 @@ defmodule Shogun.Websocket do
           |> Map.put(:internal_state, internal_state)
 
         {:noreply, state}
+      end
+
+      @impl GenServer
+      def handle_info({:DOWN, ref, :process, _pid, reason}, %{conn_ref: ref} = state) do
+        Logger.error("[#{@prefix}] connection down, reason: #{inspect(reason)}")
+        {:stop, :normal, state}
       end
 
       def on_close(_code, state), do: state
