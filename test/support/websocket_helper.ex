@@ -51,7 +51,7 @@ defmodule Shogun.WebsocketClientTest do
   use Shogun.Websocket
 
   @impl Shogun.Websocket
-  def on_message(message, state) do
+  def on_message(message, state, opts) do
     Map.put(state, :message, message)
   end
 end

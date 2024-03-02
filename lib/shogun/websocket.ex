@@ -17,7 +17,7 @@ defmodule Shogun.Websocket do
     use Shogun.Websocket
 
     @impl Shogun.Websocket
-    def on_connect(_headers, state) do
+    def on_connect(_headers, state, _opts) do
       # Doing something awesome ...
       state
     end
@@ -71,6 +71,10 @@ defmodule Shogun.Websocket do
 
   **ws_opts:** Options specific to the Websocket protocol.
 
+  **internal_state:** Initial internal state that could be updated when messages are comming.
+
+  **internal_opts:** opts that could be used each time a message is comming.
+
   Please visit https://ninenines.eu/docs/en/gun/2.0/manual/gun/ for more info about the opts
 
   """
@@ -97,27 +101,27 @@ defmodule Shogun.Websocket do
   @doc """
   trigger when the websocket client connects successfully
   """
-  @callback on_connect(headers(), state()) :: state()
+  @callback on_connect(headers(), state(), keyword()) :: state()
 
   @doc """
   trigger when the connection is lost (gun will try to connect again and upgrade to ws)
   """
-  @callback on_disconnect(reason(), state()) :: state()
+  @callback on_disconnect(reason(), state(), keyword()) :: state()
 
   @doc """
   trigger when the websocket client fails to connect successfully
   """
-  @callback on_close(code(), state()) :: state()
+  @callback on_close(code(), state(), keyword()) :: state()
 
   @doc """
   trigger when the websocket client has abruptly an error
   """
-  @callback on_error(reason(), state()) :: state()
+  @callback on_error(reason(), state(), keyword()) :: state()
 
   @doc """
   trigger when the websocket client recieves an message from the server
   """
-  @callback on_message(message(), state()) :: state()
+  @callback on_message(message(), state(), keyword()) :: state()
 
   defmacro __using__(_opts) do
     quote do
@@ -136,7 +140,12 @@ defmodule Shogun.Websocket do
         uri = URI.parse(opts[:url])
 
         args =
-          [headers: opts[:headers] || [], uri: uri]
+          [
+	    headers: opts[:headers] || [],
+	    uri: uri,
+	    internal_state: opts[:internal_state] || %{},
+	    internal_opts: opts[:internal_opts] || []
+	  ]
           |> add_open_opts(opts)
           |> add_ws_opts(opts)
 
@@ -211,7 +220,8 @@ defmodule Shogun.Websocket do
             ws_opts: args[:ws_opts],
             open_opts: args[:open_opts],
             connected: false,
-            internal_state: Keyword.get(args, :internal_state, %{})
+            internal_state: args[:internal_state],
+	    internal_opts: args[:internal_opts]
           },
           {:continue, :connect}
         }
@@ -276,8 +286,14 @@ defmodule Shogun.Websocket do
       Gun sends an Erlang message to the owner process for every Websocket message it receives.
       """
       @impl GenServer
-      def handle_info({:gun_ws, _pid, _ref, message}, %{internal_state: internal_state} = state) do
-        internal_state = on_message(message, internal_state)
+      def handle_info(
+	    {:gun_ws, _pid, _ref, message},
+	    %{
+	      internal_state: internal_state,
+	      internal_opts: opts
+	    } = state
+	  ) do
+        internal_state = on_message(message, internal_state, opts)
         {:noreply, Map.put(state, :internal_state, internal_state)}
       end
 
@@ -287,9 +303,9 @@ defmodule Shogun.Websocket do
       @impl GenServer
       def handle_info(
             {:gun_upgrade, _pid, ref, _code, headers},
-            %{internal_state: internal_state} = state
+            %{internal_state: internal_state, internal_opts: opts} = state
           ) do
-        internal_state = on_connect(headers, internal_state)
+        internal_state = on_connect(headers, internal_state, opts)
 
         state =
           state
@@ -305,13 +321,13 @@ defmodule Shogun.Websocket do
       @impl GenServer
       def handle_info(
             {:gun_response, _conn_pid, _stream_ref, _is_fin, status, headers},
-            %{internal_state: internal_state} = state
+            %{internal_state: internal_state, internal_opts: opts} = state
           ) do
         Logger.error(
           "[#{@prefix}] server does not understand websocket or refused the upgrade, error status: #{inspect(status)}, headers: #{inspect(headers)}, state: #{inspect(state)}"
         )
 
-        internal_state = on_close(status, internal_state)
+        internal_state = on_close(status, internal_state, opts)
 
         state =
           state
@@ -328,10 +344,10 @@ defmodule Shogun.Websocket do
       @impl GenServer
       def handle_info(
             {:gun_error, _pid, _stream_ref, reason},
-            %{internal_state: internal_state} = state
+            %{internal_state: internal_state, internal_opts: opts} = state
           ) do
         Logger.error("[#{@prefix}] error, reason: #{inspect(reason)}")
-        state = on_error(reason, internal_state)
+        state = on_error(reason, internal_state, opts)
 
         state =
           state
@@ -355,11 +371,11 @@ defmodule Shogun.Websocket do
       @impl GenServer
       def handle_info(
             {:gun_down, _pid, _protocol, reason, _killed_streams},
-            %{internal_state: internal_state} = state
+            %{internal_state: internal_state, internal_opts: opts} = state
           ) do
         Logger.warning("[#{@prefix}] disconnected, reason: #{inspect(reason)}")
 
-        internal_state = on_disconnect(reason, internal_state)
+        internal_state = on_disconnect(reason, internal_state, opts)
 
         state =
           state
@@ -375,17 +391,17 @@ defmodule Shogun.Websocket do
         {:stop, :normal, state}
       end
 
-      def on_close(_code, state), do: state
-      def on_connect(_headers, state), do: state
-      def on_disconnect(_reason, state), do: state
-      def on_error(_reason, state), do: state
-      def on_message(_message, state), do: state
+      def on_close(_code, state, _opts), do: state
+      def on_connect(_headers, state, _opts), do: state
+      def on_disconnect(_reason, state, _opts), do: state
+      def on_error(_reason, state, _opts), do: state
+      def on_message(_message, state, _opts), do: state
 
-      defoverridable on_close: 2
-      defoverridable on_connect: 2
-      defoverridable on_disconnect: 2
-      defoverridable on_error: 2
-      defoverridable on_message: 2
+      defoverridable on_close: 3
+      defoverridable on_connect: 3
+      defoverridable on_disconnect: 3
+      defoverridable on_error: 3
+      defoverridable on_message: 3
 
       defp client() do
         Application.get_env(:shogun, Websocket, client: Websocket.Gun)[:client]
