@@ -37,9 +37,9 @@ defmodule Shogun.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:gun, "~> 2.0"},
-      {:plug, "~> 1.14", only: [:test]},
-      {:plug_cowboy, "~> 2.6", only: [:test]},
+      {:gun, "~> 2.1"},
+      {:plug, "~> 1.16", only: [:test]},
+      {:plug_cowboy, "~> 2.7", only: [:test]},
       {:x509, "~> 0.8.5", only: :test},
       {:tls_certificate_check, "~> 1.18"},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
